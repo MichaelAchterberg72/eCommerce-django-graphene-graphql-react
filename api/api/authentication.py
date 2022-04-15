@@ -66,7 +66,7 @@ class Authentication:
         from user_controller.models import User
         
         try:
-            user = User.objectsget(id=user_id)
+            user = User.objects.get(id=user_id)
             return user
         except User.DoesNotExist:
             return None

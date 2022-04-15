@@ -46,8 +46,11 @@ class Query(graphene.ObjectType):
                                 category=graphene.String(),
                                 business=graphene.String(),
                                 sort_by=graphene.String(),
-                                is_asc=graphene.Boolean())
+                                is_asc=graphene.Boolean(),
+                                mine=graphene.Boolean())
     product = graphene.Field(ProductType, id=graphene.ID(required=True))
+    carts = graphene.List(CartType, search_filter=graphene.String())
+    request_carts = graphene.List(RequestsCartType, search_filter=graphene.String())
     
     
     # @is_authenticated
@@ -74,9 +77,18 @@ class Query(graphene.ObjectType):
         return query
     
     def resolve_products(self, info, **kwargs):
+        
+        mine = kwargs.get("mine", False)
+        if mine and not info.context.user:
+            raise Exception("User auth required")
+        
         query = Product.objects.select_related("category", "business").prefrtch_related(
             "product_images", "product_comments", "products_wished", "product_carts", "product_requests"
         )
+        
+        if mine:
+            query = query.filter(business__user_id=info.context.user.id)
+            
         if kwargs.get("search", None):
             qs = kwargs["search"]
             search_fields = (
@@ -116,6 +128,33 @@ class Query(graphene.ObjectType):
             "product_images", "product_comments", "products_wished", "product_carts", "product_requests"
         ).get(id=id)
         
+        return query
+    
+    @is_authenticated
+    def resolve_carts(self, info, search_filter=None):
+        query = Cart.objects.select_related("user", "products").filter(user_id=info.context.user.id)
+        
+        if search_filter:
+            search = (
+                Q(product__model__icontains=search_filter) 
+                | Q(product__model__iexact=search_filter)
+            )
+            query = query.filter(search).distinct()
+            
+        return query
+    
+    @is_authenticated
+    def resolve_request_carts(self, info, search_filter=None):
+        query = RequestCart.objects.select_related(
+            "user", "products", "business").filter(business__user_id=info.context.user.id)
+        
+        if search_filter:
+            search = (
+                Q(product__model__icontains=search_filter) 
+                | Q(product__model__iexact=search_filter)
+            )
+            query = query.filter(search).distinct()
+            
         return query
 
 
