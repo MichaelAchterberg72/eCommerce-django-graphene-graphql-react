@@ -1,14 +1,14 @@
 export const errorHandler = ({graphQLErrors, networkError}) => {
-    if(networkError){
-        return "Network error! check network and try again";
-    }
-
     let message = "";
     if(graphQLErrors){
         graphQLErrors.map((item) => {
-                message += item.message
+            message += item.message
             return null;
         });
+    }
+
+    if(networkError){
+        return "Network error! check network and try again";
     }
 
     return message;

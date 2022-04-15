@@ -1,14 +1,24 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useContext } from "react";
 import AuthComponent from "../components/authComponent.js";
 import { client } from "../lib/network.js";
 import { RegisterMutation } from "../lib/graphQueries.js";
 import { errorHandler } from "../lib/errorHandler.js";
 import { customNotifier } from "../components/customNotifier.js";
 import Router from "next/router";
+import { MyContext } from "../components/customContext.js";
+
 
 const Register = () => {
     const [loading, setLoading] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+    const { 
+        state: { userInfo }, 
+    } = useContext(MyContext);
+
+    if(userInfo){
+        Router.push("/");
+    }
 
     const submit = async (e, data) => {
         e.preventDefault();

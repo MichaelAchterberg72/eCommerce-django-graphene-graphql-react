@@ -35,10 +35,10 @@ export default function Layout({ children, hideFooter }) {
           {children}
         </div>
       </div>
-      {/* {
+      {
         !hideFooter &&
-      } */}
-      <div className={styles.footer}>
+        
+        <div className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerItems}>
             <h3>LET US HELP YOU</h3>
@@ -74,6 +74,8 @@ export default function Layout({ children, hideFooter }) {
           </div>
         </div>
       </div>
+        }
+      
     </div>
   </div>
   )

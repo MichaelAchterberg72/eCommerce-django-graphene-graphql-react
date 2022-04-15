@@ -152,6 +152,9 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-column-gap: 2em;
+        .MainImage {
+            height: 100%;
+        }
         .OtherImages {
             display: grid;
             grid-template-columns: 1fr 1fr;
