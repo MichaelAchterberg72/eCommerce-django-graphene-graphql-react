@@ -68,7 +68,7 @@ class GetAccess(graphene.Mutation):
         if not token or token["type"] != "refresh":
             raise Exception("Invalid token or has expired")
         
-        access = TokenManager.get_access({"user_id": token("user_id")})
+        access = TokenManager.get_access({"user_id": token["user_id"]})
         
         return GetAccess(
             access = access
