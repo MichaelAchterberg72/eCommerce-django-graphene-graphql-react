@@ -1,5 +1,9 @@
-import React from "react";
+import React, { useRef, useState } from "react";
+import { client } from "../lib/network.js";
+import { uploadImageMutation } from "../lib/graphQueries";
 import styles from "../styles/generics.module.scss";
+import { customNotifier } from "./customNotifier";
+import { errorHandler } from "../lib/errorHandler.js";
 
 export const ProductCard = (productData) => {
     return <div className={styles.productCard}>
@@ -152,10 +156,55 @@ export const RequestCard = (requestData) => {
     );
 };
 
-export const ImageSelector = ({title="image"}) => {
+export const ImageSelector = ({ title="image", cover=false, handleImageUpload }) => {
+    const fileRef = useRef();
+    const [loading, setLoading] = useState(false);
+    const [imageObj, setImageObj] = useState(null);
+    const handleChange = async (e) => {
+        const image = e.target.files[0];
+        setLoading(true);
+        const result = await client.mutate({
+            mutation: uploadImageMutation,
+            variables: {image}
+        })
+        .catch((e) =>
+            customNotifier({
+                type: "error",
+                content: errorHandler(e)
+            })
+        );
+
+        if(result) {
+            setImageObj(result.data.imageUpload.image);
+            handleImageUpload({...result.data.imageUpload.image, isCover: cover});
+        }
+        setLoading(false);
+    };
+    const handleClick = () => {
+        if(loading)return;
+        fileRef.current.value = null;
+        fileRef.current.click();
+    };
     return (
-        <div className={styles.ImageSelector}>
-            {title}
-        </div>
+        <>
+            {imageObj ? (
+                <div 
+                    src={imageObj.image} 
+                    className={`${styles.ImageLoaded} ${loading ? styles.imageLoading : ""}`} 
+                    style={{backgroundImage: `url('${imageObj.image})`}}
+                    onChange={handleChange} />
+            ) : 
+            (
+                <div className={`${styles.ImageSelector} ${loading ? styles.imageLoading : ""}`} onClick={handleClick}>
+                    {title}
+                </div>
+            )}
+            <input 
+                type="file" 
+                ref={fileRef} 
+                style={{display:"none"}} 
+                onChange={handleChange}
+            ></input>
+        </>
     );
 }; 

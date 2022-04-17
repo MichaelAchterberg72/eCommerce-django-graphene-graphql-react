@@ -1,5 +1,5 @@
 import React, { useReducer } from "react";
-import { setUser } from "../lib/dataVariables.js";
+import { setUser, setCategory } from "../lib/dataVariables.js";
 
 export const MyContext = React.createContext({});
 
@@ -10,6 +10,11 @@ const myReducer = (state, action) => {
             return {
                 ...state,
                 userInfo: payload,
+            };
+        case setCategory:
+            return {
+                ...state,
+                categories: payload,
             };
         default:
             console.log("No action type specified")

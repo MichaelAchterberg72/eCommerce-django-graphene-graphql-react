@@ -23,9 +23,9 @@ MyApp.getInitialProps = async (appContext) => {
   const getUser = (access) => {
     return client.query({
       query: meQuery,
-      context: getClientHeaders(tokenData["access"])
-    })
-  }
+      context: getClientHeaders(access)
+    });
+  };
 
   if(tokenData && tokenData["access"]){
     try{

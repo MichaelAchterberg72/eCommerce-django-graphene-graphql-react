@@ -1,8 +1,20 @@
 import Head from 'next/head'
 import styles from "../styles/layout.module.scss"
 import Router from "next/router";
+import Dropdown from "kodobe-react-dropdown";
+import { useState, useEffect, useContext } from "react";
+import { logout } from '../lib/network';
+import { MyContext } from './customContext';
 
 export default function Layout({ children, hideFooter }) {
+
+  const [mounted, setMounted] = useState(false)
+  const { state:{userInfo}, dispatch } = useContext(MyContext)
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const routeToPage = (page) => {
       switch(page){
           case "home":
@@ -16,6 +28,25 @@ export default function Layout({ children, hideFooter }) {
       }
   };
 
+  const dropHandler = (e) => {
+    switch(e){
+      case "profile":
+        Router.push("/");
+        break;
+      case "products":
+        Router.push("/register");
+        break;
+      case "requests":
+        Router.push("/register");
+        break;
+      case "logout":
+        setTimeout(() => logout(dispatch), 500);
+        break;
+      default:
+        return;
+  }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -26,8 +57,36 @@ export default function Layout({ children, hideFooter }) {
           <input name="search" type="text" placeholder="Search" />
         </div>
         <div className={styles.rightItem}>
-          <a onClick={routeToPage}>Login</a>
-          <a onClick={() => routeToPage('register')}>Register</a>
+          {
+            userInfo && userInfo.id ? (
+              <>
+              {
+                mounted && (
+                  <Dropdown 
+                    title={<img src="/user.png" alt="userImage"/>} 
+                    options={[
+                      {title:"Profile", value:"profile"},
+                      {title:"Products", value:"products"},
+                      {title:"Requests", value:"requests"},
+                      {title:"Logout", value:"logout"}
+                    ]} 
+                    onChange={dropHandler}
+                    direction="right" 
+                    maxWidth={200}
+                  />
+                )}
+            
+              <div className={styles.cartHolder}>
+                <img src="/cart.png" alt="userCart"/>
+                <div className={styles.cartItem}>0</div>
+              </div>
+            </>
+            ) : (
+              <>
+                <a onClick={routeToPage}>Login</a>
+                <a onClick={() => routeToPage('register')}>Register</a>
+              </>
+            )}
         </div>
       </div>
       <div className={styles.body}>

@@ -1,16 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useContex } from "react";
 import AuthComponent from "../components/authComponent.js";
 import { client, parseCookie, setAuthCookie } from "../lib/network.js";
 import { LoginMutation } from "../lib/graphQueries.js";
 import { errorHandler } from "../lib/errorHandler.js";
 import { customNotifier } from "../components/customNotifier.js";
 import Router, { useRouter } from "next/router";
-import { isLogin } from "../lib/dataVariables.js";
+import { isLogin, setUser } from "../lib/dataVariables.js";
+import { MyContext } from "../components/customContext.js";
 
 const Login = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    
+    const {dispatch} = useContex(MyContext);
 
     const submit = async (e, data) => {
         e.preventDefault();
@@ -23,7 +24,10 @@ const Login = () => {
         customNotifier({ type: "error", content: errorHandler(e) }));
 
         if (result) {
-            const { access, refresh } = result.data.loginUser;
+            const { access, refresh, user } = result.data.loginUser;
+
+            dispatch({ type:setUser, payload:user });
+
             setAuthCookie({ access, refresh });
             const redirect = router.query["redirect"];
             let url = "/";

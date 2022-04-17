@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout.js";
 import withAuth from "../../components/withAuth.js";
 import styles from "../../styles/dashboardStyle.module.scss";
-import { client, getClientHeaders, getNewToken } from "../../lib/network.js";
+import { client, getClientHeaders, getNewToken, handleRouting } from "../../lib/network.js";
 import { createBusinessMutation, meQuery } from "../../lib/graphQueries.js";
 import { errorHandler } from "../../lib/errorHandler.js";
 import { setUser } from "../../lib/dataVariables.js";
@@ -10,7 +10,7 @@ import { customNotifier } from "../../components/customNotifier.js";
 
 function Dashboard(props){
     const {
-        userInfo: {userBusiness},
+        userInfo: {userBusiness, firstName},
         tokenData: {access, refresh},
         dispatch
     } = props;
@@ -71,12 +71,19 @@ function Dashboard(props){
             setuserBusinessData(userBusiness);
         }
     }, [userBusiness]) 
+
+    const getUserTitle = () => {
+        if(userBusiness){
+            return userBusiness.name
+        }
+        return firstName
+    };
     
     return (
         <>
             <Layout hideFooter>
                 <div className={styles.greeting}>
-                    <h3>Hello Rachel</h3>
+                    <h3>Hello {getUserTitle()}</h3>
                     <p>How are you doing today?</p>
                 </div>
                 {userBusinessData ? (
@@ -136,6 +143,10 @@ const HasBusiness = () => {
             <div className={styles.businessCard}>
                 <img src="/cart.png" />
                 <p>View Requests</p>
+            </div>
+            <div onClick={() => handleRouting("/user/add-product")} className={`${styles.businessCard} ${styles.cardAdd}`}>
+                <img src="/add.png" />
+                <p>Add Products</p>
             </div>
         </div>
     );

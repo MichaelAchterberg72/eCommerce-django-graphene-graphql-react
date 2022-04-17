@@ -3,11 +3,17 @@ import {gql, useMutation} from '@apollo/client';
 export const LoginMutation = gql`
   mutation LoginMutation($email: String!, $password: String!) {
     loginUser(email: $email, password: $password) {
+      access
+      refresh
       user {
           id
-      },
-      access,
-      refresh
+          firstName
+          lastName
+          userBusiness {
+            name
+            id
+          }
+      }
     }
   }
 `;
