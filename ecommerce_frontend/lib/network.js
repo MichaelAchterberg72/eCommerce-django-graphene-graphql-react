@@ -5,7 +5,8 @@ import nextCookie from "next-cookies";
 import { expiredToken, isLogin, setUser, token } from "./dataVariables.js";
 import { errorHandler } from './errorHandler.js';
 import Router from "next/router";
-import { getAccessMutation } from './graphQueries.js';
+import { categoryQuery, getAccessMutation } from './graphQueries.js';
+import { customNotifier } from '../components/customNotifier.js';
 
 const url = "http://127.0.0.1:8000/graphql/";
 
@@ -70,4 +71,20 @@ export const logout = (dispatch) => {
   cookie.remove(token);
   cookie.remove(isLogin);
   dispatch({type:setUser, payload: {}})
+};
+
+export const getCategories = async () => {
+  const res = await client
+    .query({
+        query:categoryQuery,
+    })
+    .catch(e => customNotifier({
+        type: "error",
+        content: errorHandler(e),
+        })
+    );
+    if(res){
+      return res.data.categories;
+    }
+    return res;
 };

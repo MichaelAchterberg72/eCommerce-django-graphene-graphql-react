@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import styles from "../styles/homeStyle.module.scss";
 import Layout from "../components/layout.js";
-import { ProductCard, CategoryCard, HomeSection } from "../components/generics";
+import ProductComponent from '../components/productComponent';
+import ProductCategories from '../components/productCategories';
 
 export default function Home() {
   return (
@@ -9,23 +10,10 @@ export default function Home() {
       <Head>
         <title>Ecommerce Home | Search</title>
       </Head>
-     <HomeSection title="LATEST ADDITION" canShowAll onSholAll={() => alert()}>
-      {[0,0,0,0,0,0,0,0,0,0,0].map((item, id) => (
-        <ProductCard key={id} />
-      ))}
-    </HomeSection>
-
-    <HomeSection title="POPULAR PRODUCTS" canShowAll onSholAll={() => alert()}>
-      {[0,0,0,0,0].map((item, id) => (
-        <ProductCard key={id} />
-      ))}
-    </HomeSection>
-
-    <HomeSection title="CATEGORIES" canShowAll onSholAll={() => alert()}>
-      {[0,0,0,0,0,0,0,0].map((item, id) => (
-        <CategoryCard key={id} />
-      ))}
-    </HomeSection>
+      <ProductComponent title="LATEST ADDITION" tag="latest" />
+      <ProductComponent title="POPULAR PRODUCTS" tag="popular" />
+     
+      <ProductCategories />
     </Layout>
   )
 }

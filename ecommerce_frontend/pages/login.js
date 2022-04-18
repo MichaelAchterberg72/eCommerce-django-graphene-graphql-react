@@ -1,4 +1,4 @@
-import React, { useState, useContex } from "react";
+import React, { useState, useContext } from "react";
 import AuthComponent from "../components/authComponent.js";
 import { client, parseCookie, setAuthCookie } from "../lib/network.js";
 import { LoginMutation } from "../lib/graphQueries.js";
@@ -11,7 +11,7 @@ import { MyContext } from "../components/customContext.js";
 const Login = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const {dispatch} = useContex(MyContext);
+    const {dispatch} = useContext(MyContext);
 
     const submit = async (e, data) => {
         e.preventDefault();

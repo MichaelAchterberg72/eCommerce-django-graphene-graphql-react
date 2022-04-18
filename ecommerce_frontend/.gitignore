@@ -35,3 +35,9 @@ yarn-error.log*
 /.vscode
 api/env/
 api/.env
+.vscode/
+/.vscode
+**/__pycache__
+**/filelibrary
+*.pyc
+*.dot

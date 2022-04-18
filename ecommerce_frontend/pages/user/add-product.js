@@ -4,7 +4,7 @@ import withAuth from "../../components/withAuth.js";
 import Layout from "../../components/layout";
 import styles from "../../styles/singleProductStyle.module.scss";
 import { MyContext } from "../../components/customContext.js";
-import { client, getClientHeaders, getActiveToken, getNewToken } from "../../lib/network.js";
+import { client, getClientHeaders, getActiveToken, getNewToken, getCategories } from "../../lib/network.js";
 import { categoryQuery, createProductMutation } from "../../lib/graphQueries.js";
 import { customNotifier } from "../../components/customNotifier.js";
 import { errorHandler } from "../../lib/errorHandler.js";
@@ -37,19 +37,11 @@ function AddProduct () {
     }, [])
 
     const fetchCategories = async () => {
-        const res = await client
-        .query({
-            query:categoryQuery,
-        })
-        .catch(e => customNotifier({
-            type: "error",
-            content: errorHandler(e),
-            })
-        );
+        const res = await getCategories();
 
         if (res){
-            setCategories(res.data.categories);
-            dispatch({type: setCategory, payload: res.data.categories});
+            setCategories(res);
+            dispatch({type: setCategory, payload: res});
             setFetching(false);
         }
     };

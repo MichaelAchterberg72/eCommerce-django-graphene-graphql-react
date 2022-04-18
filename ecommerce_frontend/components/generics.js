@@ -5,33 +5,45 @@ import styles from "../styles/generics.module.scss";
 import { customNotifier } from "./customNotifier";
 import { errorHandler } from "../lib/errorHandler.js";
 
-export const ProductCard = (productData) => {
+export const ProductCard = ({ data }) => {
+    const { name, id, price, productImages} = data;
+    const getCoverImages = (images) => {
+        let image = "";
+        for (let i of images){
+            if(i.isCover){
+                image = i.image.image;
+                break;
+            }
+        }
+        return image;
+    };
     return <div className={styles.productCard}>
         <div className={styles.productCover}>
-            <img src="/test.png" alt="" />
+            <img src={getCoverImages(productImages)} alt="" />
         </div>
         <div className={styles.productContent}>
             <div className={styles.productTopContent}>
-                <div className={styles.productPrice}>$200.00</div>
+                <div className={styles.productPrice}>${price}</div>
                 <div className={styles.productReaction}>
                     <img src="/add.svg" />
                     <img src="/favorite.svg" />
                 </div>
             </div>
             <div className={styles.productInformation}>
-                AKG N700NCM2 Wireless Headphones
+                {name}
             </div>
         </div>
     </div>
   };
 
-  export const CategoryCard = (categoryData) => {
+  export const CategoryCard = ({data}) => {
+    const { id, name } = data;
     return <div className={styles.categoryCard}>
         <div className={styles.categoryCover}>
             <img src="/test.png" alt="" />
         </div>
         <div className={styles.categoryContent}>
-            <h3>Laptops</h3>
+            <h3>{name}</h3>
             <p>20 items available</p>
         </div>
     </div>

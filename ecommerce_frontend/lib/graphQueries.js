@@ -96,3 +96,44 @@ export const createProductMutation = gql`
     }
   }
 `;
+
+export const productQuery = gql`
+  query productQuery(
+    $search: String
+    $minPrice: Float
+    $maxPrice: Float
+    $category: String
+    $business: String
+    $sortBy: String
+    $isAsc: Boolean
+  ) {
+    products(
+      search: $search
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      category: $category
+      business: $business
+      sortBy: $sortBy
+      isAsc: $isAsc
+    ) {
+      total
+      size
+      current
+      hasNext
+      hasPrev
+      results {
+        id
+        name
+        price
+        totalAvailable
+        description
+        productImages {
+          isCover
+          image {
+            image
+          }
+        }
+      }
+    }
+  }
+`;
