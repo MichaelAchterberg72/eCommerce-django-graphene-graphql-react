@@ -1,13 +1,23 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import Layout from "../../components/layout.js";
 import { ProductCard, HomeSection, CommentItem, QuantityPicker } from "../../components/generics.js";
 import styles from "../../styles/singleProductStyle.module.scss";
-import { client } from "../../lib/network.js";
+import { addToCart, addToWish, client, deleteFromCart } from "../../lib/network.js";
 import { singleProductQuery } from "../../lib/graphQueries.js";
 import { customNotifier } from "../../components/customNotifier.js";
 import ProductComponent from '../components/productComponent.js';
 
-export default function SingleProductPage({activeProduct}) {
+export default function SingleProductPage({ activeProduct, id }) {
+    const [canAdd, setCanAdd] = useState(true);
+    const [canRemove, setCanRemove] = useState(false);
+    const [mainId, setMainId] = useState(id);
+    const [hasWish, setHasWish] = useState(false);
+    const [quntity, setQuantity] = useState(1);
+
+    const {
+        dispatch, 
+        state:{ userInfo },
+    } = useContext(MyContext);
 
     useEffect(() => {
         if (!activeProduct) {
@@ -15,9 +25,74 @@ export default function SingleProductPage({activeProduct}) {
                 type: "error",
                 content: "This product does not exist!"
             });
-            // Router.push("/");
+            Router.push("/");
         }
-    }, [])
+    }, []);
+
+    useEffect(() => {
+        handleUserWish();
+        handleUserCarts();
+    }, [userInfo]);
+
+    const handleUserWish = () => {
+        if (userInfo && userInfo.userWish){
+            const {userWish} = userInfo;
+            const checkHasWish = userWish.products.filter(item => item.id === id);
+            if (checkHasWish.length > 0){
+                setHasWish(true);
+            } else {
+                setHasWish(false);
+            }
+        }
+        else {
+            setHasWish(false);
+        }
+    };
+
+    const handleAddToCart = () => {
+        if (!userInfo){
+            customNotifier({
+                type: "error",
+                content: "You need to be logged in to perform this operation"
+            })
+            return;
+        }
+        addToCart(mainId, dispatch, userInfo, quantity);
+    };
+
+    const removeFromCart = () => {
+        if (!userInfo){
+            customNotifier({
+                type: "error",
+                content: "You need to be logged in to perform this operation"
+            })
+            return;
+        }
+        deleteFromCart(mainId, dispatch, userInfo);
+    };
+
+    const handleUserCarts = () => {
+        if(!userInfo)return
+
+        const {userCarts} = userInfo;
+        let cart = userCarts.filter((item) => item.product.id === id);
+        if(cart.length > 0){
+            cart = cart[0]
+            setMainId(cart.id);
+            setQuantity(cart.quantity);
+            setCanRemove(true);
+
+            if(cart.product.totalCount <= cart.quantity){
+                setCanAdd(false);
+            } else {
+                setCanAdd(true);
+            }
+        } else {
+            setMainId(id);
+            setCanRemove(false);
+            setCanAdd(true);
+        }
+    };
 
     if (!activeProduct) return <div />;
 
@@ -85,9 +160,16 @@ export default function SingleProductPage({activeProduct}) {
                     </div>
                     {product.totalAvailable > 0 ? (
                         <div className={styles.purchaseInfo}>
-                            <QuantityPicker maxAvailable={product.totalAvailable}/>>
-                            <button>ADD TO CART</button>
-                            <img src="favorite.svg" />
+                            <QuantityPicker 
+                                maxAvailable={product.totalAvailable} 
+                                quantity={quantity} 
+                                onChange={e => setQuantity(e)}
+                            />>
+                            <div className={styles.controlButton}>
+                                {canAdd && <button onClick={handleAddToCart}>{canRemove ? "UPDATE" : "ADD TO CART"</button>}
+                                {canRemove && <button onClick={removeFromCart} className={styles.removeButton}>REMOVE</button>}
+                            </div>
+                            <img src={hasWish ? "/favColored.png" : "/favorite.png"} onClick={() => addToWish(id, dispatch)} />
                         </div>
                      ) : (
                         <div>Product sold out</div>
@@ -130,5 +212,5 @@ SingleProductPage.getInitialProps = async (ctx) => {
         variables: {id}
     }).catch(e => null)
 
-    return { activeProduct: res };
+    return { activeProduct: res, id };
 };

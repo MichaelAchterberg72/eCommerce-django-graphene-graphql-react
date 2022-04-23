@@ -15,9 +15,7 @@ export const ProductCard = ({ data }) => {
     const [hasWish, setHasWish] = useState(false);
     const {
         dispatch, 
-        state:{
-            userInfo,
-        },
+        state:{ userInfo },
     } = useContext(MyContext);
         
     useEffect(() => {
@@ -116,14 +114,14 @@ export const ProductCard = ({ data }) => {
   };
 
   export const CategoryCard = ({ data, onClick }) => {
-    const { id, name } = data;
+    const { name, count } = data;
     return <div className={styles.categoryCard} onClick={() => onClick(name)}>
         <div className={styles.categoryCover}>
             <img src="/test.png" alt="" />
         </div>
         <div className={styles.categoryContent}>
             <h3>{name}</h3>
-            <p>20 items available</p>
+            <p>{count} item(s) available</p>
         </div>
     </div>
   };
@@ -170,12 +168,22 @@ export const ProductCard = ({ data }) => {
       );
   };
 
-export const QuantityPicker = () => {
+export const QuantityPicker = ( maxAvailable, quantity, onChange ) => {
+
+    const getOptions = () => {
+        const optionList = [];
+
+        for (let i=1; i<=maxAvailable; i++){
+            optionList.push(<option value={i} key={i}>{i}</option>)
+        }
+        return optionList;
+    };
+
     return (
         <div className={styles.quantitySelector}>
             <small>QTY</small>
-            <select>
-                <option>1</option>
+            <select value={quantity} onChange={(e) => onChange(e.target.value)}>
+                getOptions();
             </select>
         </div>
     );

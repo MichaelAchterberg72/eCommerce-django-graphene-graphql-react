@@ -164,6 +164,10 @@ export const async addToCart = (mainId, dispatch, userInfo, quantity=1) => {
       variables,
       );
       if (res) {
+        customNotifier({
+          type: "success",
+          content: "Cart updated successfully"
+        });
         const data = res.updateCartItem.cartItem;
         const newUserCart = userInfo.userCarts.map(
           (item) => {
