@@ -1,12 +1,41 @@
-import React, { useRef, useState } from "react";
-import { client } from "../lib/network.js";
-import { uploadImageMutation } from "../lib/graphQueries";
+import React, { useContext, useRef, useState, useEffect } from "react";
+import { addToCart, addToWish, client, deleteFromCart } from "../lib/network.js";
+import { uploadImageMutation } from "../lib/graphQueries.js";
 import styles from "../styles/generics.module.scss";
-import { customNotifier } from "./customNotifier";
+import { customNotifier } from "./customNotifier.js";
 import { errorHandler } from "../lib/errorHandler.js";
+import Router from "next/router";
+import { MyContext } from "./customContext.js"
 
 export const ProductCard = ({ data }) => {
-    const { name, id, price, productImages} = data;
+    const [{ name, id, price, productImages}] = useState(data);
+    const [canAdd, setCanAdd] = useState(true);
+    const [canRemove, setCanRemove] = useState(false);
+    const [mainId, setMainId] = useState(id);
+    const [hasWish, setHasWish] = useState(false);
+    const {
+        dispatch, 
+        state:{
+            userInfo,
+        },
+    } = useContext(MyContext);
+        
+    useEffect(() => {
+        if (userInfo && userInfo.userWish){
+            const {userWish} = userInfo;
+            const checkHasWish = userWish.products.filter(item => item.id === id);
+            if (checkHasWish.length > 0){
+                setHasWish(true);
+            } else {
+                setHasWish(false);
+            }
+        }
+        else {
+            setHasWish(false);
+        }
+        handleUserCarts();
+    }, [userInfo]);
+
     const getCoverImages = (images) => {
         let image = "";
         for (let i of images){
@@ -17,28 +46,78 @@ export const ProductCard = ({ data }) => {
         }
         return image;
     };
+
+    const handleProductClick = () => {
+        Router.push(`/product/${id}`);
+    };
+    
+    const handleAddToCart = () => {
+        if (!userInfo){
+            customNotifier({
+                type: "error",
+                content: "You need to be logged in to perform this operation"
+            })
+            return;
+        }
+        addToCart(mainId, dispatch, userInfo);
+    };
+
+    const removeFromCart = () => {
+        if (!userInfo){
+            customNotifier({
+                type: "error",
+                content: "You need to be logged in to perform this operation"
+            })
+            return;
+        }
+        deleteFromCart(mainId, dispatch, userInfo);
+    };
+
+    const handleUserCarts = () => {
+        if(!userInfo)return
+
+        const {userCarts} = userInfo;
+        let cart = userCarts.filter((item) => item.product.id === id);
+        if(cart.length > 0){
+            cart = cart[0]
+            setMainId(cart.id);
+            setCanRemove(true);
+
+            if(cart.product.totalCount <= cart.quantity){
+                setCanAdd(false);
+            } else {
+                setCanAdd(true);
+            }
+        } else {
+            setMainId(id);
+            setCanRemove(false);
+            setCanAdd(true);
+        }
+    };
+
     return <div className={styles.productCard}>
-        <div className={styles.productCover}>
+        <div className={styles.productCover} onClick={handleProductClick}>
             <img src={getCoverImages(productImages)} alt="" />
         </div>
         <div className={styles.productContent}>
             <div className={styles.productTopContent}>
                 <div className={styles.productPrice}>${price}</div>
                 <div className={styles.productReaction}>
-                    <img src="/add.svg" />
-                    <img src="/favorite.svg" />
+                    {canRemove && <img src="/minus.svg" onClick={() => removeFromCart} />}
+                    {canAdd && <img src="/add.svg" onClick={() => handleAddToCart} />}
+                    <img src={hasWish ? "/favColored.png" : "/favorite.png"} onClick={() => addToWish(id, dispatch)} />
                 </div>
             </div>
-            <div className={styles.productInformation}>
+            <div className={styles.productInformation} onClick={handleProductClick}>
                 {name}
             </div>
         </div>
     </div>
   };
 
-  export const CategoryCard = ({data}) => {
+  export const CategoryCard = ({ data, onClick }) => {
     const { id, name } = data;
-    return <div className={styles.categoryCard}>
+    return <div className={styles.categoryCard} onClick={() => onClick(name)}>
         <div className={styles.categoryCover}>
             <img src="/test.png" alt="" />
         </div>

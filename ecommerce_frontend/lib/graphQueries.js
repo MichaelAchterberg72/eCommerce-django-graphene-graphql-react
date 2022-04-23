@@ -13,6 +13,19 @@ export const LoginMutation = gql`
             name
             id
           }
+          userWish {
+            products {
+              id
+            }
+          }
+          userCarts {
+            id
+            quantity
+            product {
+              id
+              totalAvailable
+            }
+          }
       }
     }
   }
@@ -35,6 +48,19 @@ export const meQuery = gql`
       userBusiness {
         name
         id
+      }
+      userWish {
+        products {
+          id
+        }
+      }
+      userCarts {
+        id
+        quantity
+        product {
+          id
+          totalAvailable
+        }
       }
     }
   }
@@ -97,24 +123,24 @@ export const createProductMutation = gql`
   }
 `;
 
-export const productQuery = gql`
-  query productQuery(
-    $search: String
-    $minPrice: Float
-    $maxPrice: Float
-    $category: String
-    $business: String
-    $sortBy: String
-    $isAsc: Boolean
+export const productsQuery = gql`
+  query productsQuery(
+    $search: String,
+    $minPrice: Float,
+    $maxPrice: Float,
+    $category: String,
+    $business: String,
+    $sortBy: String,
+    $isAsc: Boolean,
   ) {
     products(
-      search: $search
-      minPrice: $minPrice
-      maxPrice: $maxPrice
-      category: $category
-      business: $business
-      sortBy: $sortBy
-      isAsc: $isAsc
+      search: $search,
+      minPrice: $minPrice,
+      maxPrice: $maxPrice,
+      category: $category,
+      business: $business,
+      sortBy: $sortBy,
+      isAsc: $isAsc,
     ) {
       total
       size
@@ -134,6 +160,88 @@ export const productQuery = gql`
           }
         }
       }
+    }
+  }
+`;
+
+export const singleProductQuery = gql`
+  query singleProductQuery($id: ID!) {
+    product(id:$id){
+      category{
+        name
+      }
+      business {
+        name
+      }
+      name
+      price
+      totalAvailable
+      description
+      productImages {
+        image {
+          image
+        }
+        isCover
+      }
+      productComments {
+        comment
+        createdAt
+      }
+    }
+  }
+`;
+
+export const toggleWish = gql`
+  mutation toggleWish(
+    $productId: ID!
+  ) {
+    handleWishList(
+      productId: $productId
+      ) {
+      status
+    }
+  }
+`;
+
+export const createCartMutation = gql`
+  mutation createCartMutation ($productId: ID!, $quantity: Int){
+    createCartItem(productId: $productId, quantity: $quantity){
+      cartItem {
+        quantity
+        id
+        product {
+          id
+          totalCount
+        }
+      }
+    }
+  }
+`;
+
+export const updateCartMutation = gql`
+  mutation updateCartMutation ($cartId: ID!, $quantity: Int!){
+    updateCartItem(cartId: $cartId, quantity: $quantity){
+      cartItem {
+        quantity
+        id
+        quantity
+        product {
+          id
+          totalCount
+        }
+      }
+    }
+  }
+`;
+
+export const deleteCartMutation = gql`
+  mutation deleteCartMutation(
+    $cartId: ID!
+  ) {
+    handleWishList(
+      cartId: $cartId
+      ) {
+      status
     }
   }
 `;

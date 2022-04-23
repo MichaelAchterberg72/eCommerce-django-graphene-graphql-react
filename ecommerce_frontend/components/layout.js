@@ -2,18 +2,29 @@ import Head from 'next/head'
 import styles from "../styles/layout.module.scss"
 import Router from "next/router";
 import Dropdown from "kodobe-react-dropdown";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { logout } from '../lib/network';
 import { MyContext } from './customContext';
+import { setSearch } from '../lib/dataVariables';
 
 export default function Layout({ children, hideFooter }) {
 
-  const [mounted, setMounted] = useState(false)
-  const { state:{userInfo}, dispatch } = useContext(MyContext)
+  const [mounted, setMounted] = useState(false);
+  const searchInput = useRef("");
+  const debounceTimeout = useRef();
+  const { state:{userInfo, search}, dispatch } = useContext(MyContext);
+
+  const {router} = Router;
 
   useEffect(() => {
     setMounted(true);
   }, []);
+  
+  useEffect(() => {
+    if (router.pathname === "/search") {
+      searchInput.current.focus();
+    }
+  }, [router && router.pathname]);
 
   const routeToPage = (page) => {
       switch(page){
@@ -47,14 +58,34 @@ export default function Layout({ children, hideFooter }) {
   }
   };
 
+  const handleSearchClick = () => {
+    if ( router.pathname !== "/search"){
+      Router.push("/search");
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    clearTimeout(debounceTimeout.current);
+    debounceTimeout.current = setTimeout(
+      () => dispatch({type:setSearch, payload: e.target.value}), 
+      1500
+    );
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerInner}>
         <div className={ 'logo ${styles.logo}' } onClick={() => routeToPage('home')}>ECOMMERCE</div>
-        <div className={styles.searchContainer}>
+        <div className={styles.searchContainer} onClick={handleSearchClick}>
           <img src="./search.png" />
-          <input name="search" type="text" placeholder="Search" />
+          <input 
+            ref={searchInput} 
+            name="search" 
+            type="text" 
+            onChange={handleSearchChange}
+            placeholder="Search" 
+          />
         </div>
         <div className={styles.rightItem}>
           {
@@ -78,7 +109,9 @@ export default function Layout({ children, hideFooter }) {
             
               <div className={styles.cartHolder}>
                 <img src="/cart.png" alt="userCart"/>
-                <div className={styles.cartItem}>0</div>
+                <div className={styles.cartItem}>
+                  {userInfo.userCarts.length}
+                </div>
               </div>
             </>
             ) : (

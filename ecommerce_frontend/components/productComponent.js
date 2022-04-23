@@ -1,36 +1,45 @@
-import React, { useEffect, useState } from "react";
-import { errorHandler } from "../lib/errorHandler";
-import { productQuery } from "../lib/graphQueries";
-import { client } from "../lib/network";
-import { customNotifier } from "./customNotifier";
+import React, { useState, useContext, useEffect } from "react";
+import { getProducts } from "../lib/network";
+import { MyContext } from "./customContext";
 import { HomeSection, ProductCard } from "./generics";
+import Router from "next/router";
 
-export default function ProductComponent({title, tag}) {
+export default function ProductComponent({ title, tag, category }) {
 
     const [products, setProducts] = useState([]);
     const [fetching, setFetching] = useState(true);
+    const {dispatch} = useContext(MyContext);
 
     useEffect(() => {
-        getProducts();
+        fetchProducts();
     }, []);
 
-    const getProducts = async () => {
-        const result = await client.query({
-            query: productQuery
-        }).catch(e => customNotifier({
-            type: "error",
-            content: errorHandler(e)
-        }));
+    const fetchProducts = async () => {
+
+        const variables = {};
+        if (category) {
+            variables.category = category;
+        }
+        const result = await getProducts(variables);
 
         if (result) {
-            const results = result.data.products.results;
+            const { results } = result;
             setProducts(results);
             setFetching(false);
         }
     };
 
+    const handleOnClick = () => {
+        if (category){
+            dispatch({type: setSearch, payload: category});
+        } else {
+            dispatch({type: setSort, payload: tag});
+        }
+        Router.push("/search");
+    };
+
     return (
-        <HomeSection title={title} canShowAll onSholAll={() => alert()}>
+        <HomeSection title={title} canShowAll onShowAll={handleOnClick}>
             {!fetching && products.map((item, id) => (
                 <ProductCard data={item} key={id} />
             ))}

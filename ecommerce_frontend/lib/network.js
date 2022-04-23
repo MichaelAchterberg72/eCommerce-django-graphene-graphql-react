@@ -2,10 +2,18 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { createUploadLink } from "apollo-upload-client";
 import cookie from "js-cookie";
 import nextCookie from "next-cookies";
-import { expiredToken, isLogin, setUser, token } from "./dataVariables.js";
+import { expiredToken, isLogin, setUser, toggleUserWish, token } from "./dataVariables.js";
 import { errorHandler } from './errorHandler.js';
 import Router from "next/router";
-import { categoryQuery, getAccessMutation } from './graphQueries.js';
+import { 
+  categoryQuery, 
+  getAccessMutation, 
+  productsQuery, 
+  toggleWish, 
+  createCartMutation, 
+  updateCartMutation,
+  deleteCartMutation,
+} from './graphQueries.js';
 import { customNotifier } from '../components/customNotifier.js';
 
 const url = "http://127.0.0.1:8000/graphql/";
@@ -87,4 +95,187 @@ export const getCategories = async () => {
       return res.data.categories;
     }
     return res;
+};
+
+export const getProducts = async (variables) => {
+  const res = await client
+    .query({
+        query: productsQuery,
+        variables,
+    }).catch(e => customNotifier({
+        type: "error",
+        content: errorHandler(e)
+    }));
+
+  if (res) {
+    const { results, total, size, current, hasNext, hasPrev } = res.data.products.results;
+    const pageInfo = { total, size, current, hasNext, hasPrev };
+    return { results, pageInfo };
+  }
+  return res;
+};
+
+export const addToWish = (productId, dispatch) => {
+  dispatch({type: toggleUserWish, payload: productId});
+  const activeToken = getActiveToken();
+  handleAddToWish(productId, activeToken.access, activeToken.refresh)
+};
+
+const handleAddToWish = async (productId, dispatch, access, refresh) => {
+  try{
+      const result = await client
+      .mutate({
+          mutation: toggleWish,
+          variables: {
+            productId
+          },
+          context: getClientHeaders(access)
+      });
+  } catch (e) {
+      const errorInfo = errorHandler(e);
+      if(errorInfo === expiredToken) {
+          const newAccess = await getNewToken(e, refresh);
+          if(newAccess){
+            setAuthCookie({ access: newAccess, refresh });
+            handleAddToWish(productId, dispatch, newAccess, refresh)
+          }
+      }
+      else {
+        dispatch({type: toggleUserWish, payload: productId}); 
+      }
+  }
+};
+
+export const async addToCart = (mainId, dispatch, userInfo, quantity=1) => {
+  const activeToken = getActiveToken();
+
+  const product = userInfo.userCarts.filter((item) => item.id === mainId);
+  if (product.length > 0) {
+    const variables = {
+      cartId: mainId,
+      quantity,
+    };
+    const res = await handleCartRequest(
+      mainId, 
+      quantity, 
+      activeToken.access, 
+      activeToken.refresh, 
+      updateCartMutation, 
+      variables,
+      );
+      if (res) {
+        const data = res.updateCartItem.cartItem;
+        const newUserCart = userInfo.userCarts.map(
+          (item) => {
+            if (item.id === mainId) {
+              return data;
+            }
+            return item;
+          }
+        );
+        dispatch({type:setUser, payload:{ ...userInfo, userCarts: newUserCart }});
+      }
+  } else {
+    const variables = {
+      productId: mainId,
+      quantity
+    };
+    const res = await handleCartRequest(
+      mainId, 
+      quantity, 
+      activeToken.access, 
+      activeToken.refresh, 
+      createCartMutation, 
+      variables
+    );
+    if (res) {
+      const data = res.createCartItem.cartItem;
+      const newUserInfo = {...userInfo, userCarts:[...userInfo.userCarts, data]};
+      dispatch({type:setUser, payload:newUserInfo});
+    }
+  }
+};
+
+const handleCartRequest = async (
+    productsId, 
+    quantity, 
+    access,
+    refresh,
+    mutation,
+    variables
+  ) => {
+  try{
+    const res = await client
+    .mutate({
+        mutation,
+        variables,
+        context: getClientHeaders(access)
+    });
+    if (res) {
+      return res.data
+    }
+  } catch (e) {
+      const errorInfo = errorHandler(e);
+      if(errorInfo === expiredToken) {
+          const newAccess = await getNewToken(e, refresh);
+          if(newAccess){
+            setAuthCookie({ access: newAccess, refresh });
+            handleCartRequest(
+              productId, 
+              quantity, 
+              dispatch, 
+              newAccess,
+              refresh, 
+              mutation, 
+              variables
+            );
+          }
+      }
+  }
+};
+
+export const deleteFromCart = async (mainId, dispatch, userInfo) => {
+  const activeToken = getActiveToken();
+
+  const product = userInfo.userCarts.filter((item) => item.id === mainId);
+  if(product.length > 1){
+    return;
+  }
+
+  const res = await handleCartDeleteRequest(mainId, activeToken.access, activeToken.refresh);
+  if(res){
+    const newUserCart = userInfo.userCarts.filter((item) => item.id !== mainId);
+    dispatch({type:setUser, payload:{ ...userInfo, userCarts: newUserCart }});
+  }
+};
+
+const handleCartDeleteRequest = async (
+  cartId, 
+  access,
+  refresh
+) => {
+try{
+  const res = await client
+  .mutate({
+      mutation: deleteCartMutation,
+      variables: {cartId},
+      context: getClientHeaders(access)
+  });
+  if (res) {
+    return res.data
+  }
+} catch (e) {
+    const errorInfo = errorHandler(e);
+    if(errorInfo === expiredToken) {
+        const newAccess = await getNewToken(e, refresh);
+        if(newAccess){
+          setAuthCookie({ access: newAccess, refresh });
+          handleCartDeleteRequest(
+            cartId, 
+            access,
+            refresh
+          );
+        }
+    }
+  }
 };

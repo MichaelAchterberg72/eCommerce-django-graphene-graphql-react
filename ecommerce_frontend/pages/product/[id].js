@@ -1,74 +1,134 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "../../components/layout.js";
 import { ProductCard, HomeSection, CommentItem, QuantityPicker } from "../../components/generics.js";
 import styles from "../../styles/singleProductStyle.module.scss";
+import { client } from "../../lib/network.js";
+import { singleProductQuery } from "../../lib/graphQueries.js";
+import { customNotifier } from "../../components/customNotifier.js";
+import ProductComponent from '../components/productComponent.js';
 
-export default function SingleProductPage() {
+export default function SingleProductPage({activeProduct}) {
+
+    useEffect(() => {
+        if (!activeProduct) {
+            customNotifier({
+                type: "error",
+                content: "This product does not exist!"
+            });
+            // Router.push("/");
+        }
+    }, [])
+
+    if (!activeProduct) return <div />;
+
+    const {
+        data: { product },
+    } = activeProduct;
+
+    const {productImages} = product;
+
+    const getCover = () => {
+        let image = "";
+        for (let i of productImages){
+            if(i.isCover){
+                image = i.image.image;
+                break;
+            }
+        }
+        return image;
+    };
+   
+    const getOtherImagews = () => {
+        let image = [];
+        for (let i of productImages){
+            if(!i.isCover){
+                image.push(i.image.image);
+                break;
+            }
+        }
+        return image;
+    };
+
     return (
     <Layout hidefooter>
         <div className={styles.container}>
             <div className={styles.headerLinks}>
                 <div className={styles.linkItem}>Home</div>
                 <img src="/chevron-reight" />
-                <div className={styles.linkItem}>Phones</div>
+                <div className={styles.linkItem}>{product.category.name}</div>
                 <img src="/chevron-reight" />
-                <div className={styles.linkItem}>Samsung Note 20 Ultra</div>
+                <div className={styles.linkItem}>
+                    {product.name.length > 30 
+                        ? product.name.substring(0, 30) 
+                        : product.name}
+                </div>
             </div>
             <div className={styles.mainContent}>
                 <div className={styles.rightItem}>
                     <div className={styles.mainCover}>
-                        <img src="" alt="" />
+                        <img src={getCover()} alt="" />
                     </div>
                     <div className={styles.imageSliders}>
-                        <img src="" alt="" />
-                        <img src="" alt="" />
-                        <img src="" alt="" />
+                        {getOtherImagews().map((item, id) => <img key={id} src={item} alt="" />)}
                     </div>
                 </div>
                 <div className={styles.leftItem}>
                     <div className={styles.title}>
-                        Samsung note 20 pro ultra, 1tb rom, 26gb ram
+                        {product.name}
                     </div>
                     <div className={styles.listedBy}>
-                        BY <strong>JT PHONES AND ACCESSORIES</strong>
+                        BY <strong>{product.business.name}S</strong>
                     </div>
                     <div className={styles.priceInfo}>
-                        <h3>$1,460.00</h3>
+                        <h3>${product.price}</h3>
                         <small>SAVE 12% INCLUSIVE OF ALL TAXES</small>
                     </div>
-                    <div className={styles.purchaseInfo}>
-                        <QuantityPicker />>
-                        <button>ADD TO CART</button>
-                        <img src="favorite.svg" />
-                    </div>
+                    {product.totalAvailable > 0 ? (
+                        <div className={styles.purchaseInfo}>
+                            <QuantityPicker maxAvailable={product.totalAvailable}/>>
+                            <button>ADD TO CART</button>
+                            <img src="favorite.svg" />
+                        </div>
+                     ) : (
+                        <div>Product sold out</div>
+                    )}
                     <div className={styles.description}>
                         <div className={styles.descTitle}>
                             DESCRIPTION
                         </div>
                         <p>
-                            Technology: GSM / CDMA / HSPA / EVDO / LTE / 5G Announced: 2020,
-                            August 3 Status: Available. Released 2020, August 21
-                            Dimensions: 164.8 x 77.2 x 8.1 mm (6.49 x 3.04 x 0.32 in)
-                            Weight: 208 g (7.34 oz) Build: Glass front (Gorilla Glass
-                            Victus), glass back (Gorilla Glass Victus), stainless steel
-                            frame);
+                            {product.description}
                         </p>
                     </div>
-                    <div className={styles.comments}>
+                    {/* <div className={styles.comments}>
                         <div className={styles.commentHeader}>
                             <div className={styles.commenttitle}>COMMENTS - 20</div>
                             <div className={styles.link}>SHOW ALL</div>
                         </div>
                         <CommentItem />
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>
-        <HomeSection title="SIMILAR PRODUCTS" canShowAll onSholAll={() => alert()}>
+        <ProductComponent title="SIMILAR PRODUCTS" tag="similar" category={product.category.name} />
+        {/* <HomeSection title="SIMILAR PRODUCTS" canShowAll onSholAll={() => alert()}>
             {[0,0,0,0,0,0,0,0,0,0,0].map((item, id) => (
                 <ProductCard key={id} />
             ))}
-        </HomeSection>
+        </HomeSection> */}
     </Layout>
     );
 }
+
+SingleProductPage.getInitialProps = async (ctx) => {
+
+    const { query } = ctx;
+    let id = query.id;
+
+    const res = await client.query({
+        query: singleProductQuery,
+        variables: {id}
+    }).catch(e => null)
+
+    return { activeProduct: res };
+};

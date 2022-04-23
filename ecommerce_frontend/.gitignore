@@ -41,3 +41,4 @@ api/.env
 **/filelibrary
 *.pyc
 *.dot
+.gitignore

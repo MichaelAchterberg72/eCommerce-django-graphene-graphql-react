@@ -1185,6 +1185,11 @@ kodobe-react-dropdown@^2.0.5:
   dependencies:
     prop-types "^15.7.2"
 
+kodobe-react-pagination@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/kodobe-react-pagination/-/kodobe-react-pagination-2.1.0.tgz#c4955affa6162d2c451b52783b91b0031ca84743"
+  integrity sha512-S4Bhyk0umFqN/JOdFcy79S7R5nAUCewi8mqNVqqETbO3CR/MTmzO9+ZF+6rK83bbDBP9dQE39LcAQg6hhn3AhQ==
+
 language-subtag-registry@~0.3.2:
   version "0.3.21"
   resolved "https://registry.npmjs.org/language-subtag-registry/-/language-subtag-registry-0.3.21.tgz"

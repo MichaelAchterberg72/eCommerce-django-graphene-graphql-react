@@ -30,10 +30,8 @@ MyApp.getInitialProps = async (appContext) => {
   if(tokenData && tokenData["access"]){
     try{
       result = await getUser(tokenData["access"]);
-    }
-    catch(e) {
+    } catch(e) {
       const newAccess = await getNewToken(e, tokenData["refresh"]);
-      const errorContent = errorHandler(e);
       if(newAccess){
         result = await getUser(newAccess);
         tokenData["access"] = newAccess;
@@ -47,11 +45,10 @@ MyApp.getInitialProps = async (appContext) => {
   if(result) {
     userData = result.data.me;
     setIsLoginCookie(true);
-  }
-  else {
+  } else {
     setIsLoginCookie(false)
   }
-
+  client.resetStore();
   return {
     ...appProps, 
     userData: userData,

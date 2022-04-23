@@ -3,6 +3,7 @@ import { setCategory } from "../lib/dataVariables";
 import { getCategories } from "../lib/network";
 import { MyContext } from "./customContext";
 import { CategoryCard, HomeSection } from "./generics";
+import Router from "next/router";
 
 
 export default function ProductCategories() {
@@ -31,10 +32,15 @@ export default function ProductCategories() {
         }
     };
 
+    const handleOnClick = name => {
+        dispatch({type: setSearch, payload: name});
+        Router.push("/search");
+    };
+
     return (
         <HomeSection title="CATEGORIES" canShowAll onSholAll={() => alert()}>
         {fetching && categorys.map((item, id) => (
-          <CategoryCard data={item} key={id} />
+          <CategoryCard onClick={handleOnClick()} data={item} key={id} />
         ))}
       </HomeSection>
     );
