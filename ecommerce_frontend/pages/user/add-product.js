@@ -4,11 +4,19 @@ import withAuth from "../../components/withAuth.js";
 import Layout from "../../components/layout";
 import styles from "../../styles/singleProductStyle.module.scss";
 import { MyContext } from "../../components/customContext.js";
-import { client, getClientHeaders, getActiveToken, getNewToken, getCategories, setAuthCookie } from "../../lib/network.js";
+import { 
+    client, 
+    getClientHeaders, 
+    getActiveToken, 
+    getNewToken, 
+    getCategories, 
+    setAuthCookie 
+} from "../../lib/network.js";
 import { categoryQuery, createProductMutation } from "../../lib/graphQueries.js";
 import { customNotifier } from "../../components/customNotifier.js";
 import { errorHandler } from "../../lib/errorHandler.js";
 import { expiredToken, setCategory } from "../../lib/dataVariables.js";
+import Router from "next/router";
 
 function AddProduct () {
 
@@ -80,6 +88,7 @@ function AddProduct () {
                 type: "success",
                 content: "Product has been added scccessfully",
             });
+        Router.push("/user/products")
         } catch (e) {
             const errorInfo = errorHandler(e);
             if(errorInfo === expiredToken) {

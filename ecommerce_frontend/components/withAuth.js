@@ -1,7 +1,8 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { isLogin } from "../lib/dataVariables.js";
 import { parseCookie } from "../lib/network";
 import Router from "next/router";
+import { MyContext } from "./customContext.js";
 
 const withAuth = (AuthComponent) => {
     const Wrapper = (props) => {
@@ -11,12 +12,23 @@ const withAuth = (AuthComponent) => {
             dispatch,
         } = useContext(MyContext);
 
+        useEffect(() => {
+            if (!userInfo || !userInfo.id || !tokenData) {
+                Router.push(`/login?redirect=${document.location.pathname}`);
+            }
+        }, [userInfo]);
+
+        if (!userInfo || !userInfo.id || !tokenData) {
+            return <div />;
+          }
+
         return (
             <AuthComponent 
-            userInfo={userInfo} 
-            tokenData={tokenData} 
-            dispatch={dispatch} 
-            {...props} />
+                userInfo={userInfo} 
+                tokenData={tokenData} 
+                dispatch={dispatch} 
+                {...props} 
+            />
         );
     };
 

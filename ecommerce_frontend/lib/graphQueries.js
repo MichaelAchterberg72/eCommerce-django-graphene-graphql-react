@@ -1,4 +1,4 @@
-import {gql, useMutation} from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const LoginMutation = gql`
   mutation LoginMutation($email: String!, $password: String!) {
@@ -6,34 +6,44 @@ export const LoginMutation = gql`
       access
       refresh
       user {
+        id
+        firstName
+        lastName
+        userBusiness {
+          name
           id
-          firstName
-          lastName
-          userBusiness {
-            name
+        }
+        userWish {
+          products {
             id
           }
-          userWish {
-            products {
-              id
-            }
-          }
-          userCarts {
+        }
+        userCarts {
+          id
+          quantity
+          product {
             id
-            quantity
-            product {
-              id
-              totalAvailable
-            }
+            totalCount
           }
+        }
       }
     }
   }
 `;
 
 export const RegisterMutation = gql`
-  mutation RegisterMutation($email: String!, $password: String!, $firstName: String!, $lastName: String!) {
-    registerUser(email: $email, password: $password, firstName: $firstName, lastName: $lastName) {
+  mutation RegisterMutation(
+    $email: String!
+    $password: String!
+    $firstName: String!
+    $lastName: String!
+  ) {
+    registerUser(
+      email: $email
+      firstName: $firstName
+      lastName: $lastName
+      password: $password
+    ) {
       message
     }
   }
@@ -59,7 +69,7 @@ export const meQuery = gql`
         quantity
         product {
           id
-          totalAvailable
+          totalCount
         }
       }
     }
@@ -96,7 +106,7 @@ export const uploadImageMutation = gql`
 `;
 
 export const categoryQuery = gql`
-  query categoryQuery($name: String!) {
+  query categoryQuery($name: String) {
     categories(name: $name) {
       id
       name
@@ -107,13 +117,13 @@ export const categoryQuery = gql`
 
 export const createProductMutation = gql`
   mutation createProductMutation(
-    $images: [ProductImageInput],
-    $productData: ProductInput!,
+    $images: [ProductImageInput]
+    $productData: ProductInput!
     $totalCount: Int!
   ) {
     createProduct(
-      images: $images,
-      productData: $productData,
+      images: $images
+      productData: $productData
       totalCount: $totalCount
     ) {
       product {
@@ -123,24 +133,26 @@ export const createProductMutation = gql`
   }
 `;
 
-export const productsQuery = gql`
-  query productsQuery(
-    $search: String,
-    $minPrice: Float,
-    $maxPrice: Float,
-    $category: String,
-    $business: String,
-    $sortBy: String,
-    $isAsc: Boolean,
+export const productQuery = gql`
+  query productQuery(
+    $search: String
+    $minPrice: Float
+    $maxPrice: Float
+    $category: String
+    $business: String
+    $sortBy: String
+    $isAsc: Boolean
+    $mine: Boolean
   ) {
     products(
-      search: $search,
-      minPrice: $minPrice,
-      maxPrice: $maxPrice,
-      category: $category,
-      business: $business,
-      sortBy: $sortBy,
-      isAsc: $isAsc,
+      search: $search
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      category: $category
+      business: $business
+      sortBy: $sortBy
+      isAsc: $isAsc
+      mine: $mine
     ) {
       total
       size
@@ -151,8 +163,8 @@ export const productsQuery = gql`
         id
         name
         price
+        createdAt
         totalAvailable
-        description
         productImages {
           isCover
           image {
@@ -166,8 +178,8 @@ export const productsQuery = gql`
 
 export const singleProductQuery = gql`
   query singleProductQuery($id: ID!) {
-    product(id:$id){
-      category{
+    product(id: $id) {
+      category {
         name
       }
       business {
@@ -192,20 +204,16 @@ export const singleProductQuery = gql`
 `;
 
 export const toggleWish = gql`
-  mutation toggleWish(
-    $productId: ID!
-  ) {
-    handleWishList(
-      productId: $productId
-      ) {
+  mutation toggleWish($productId: ID!) {
+    handleWishList(productId: $productId) {
       status
     }
   }
 `;
 
 export const createCartMutation = gql`
-  mutation createCartMutation ($productId: ID!, $quantity: Int){
-    createCartItem(productId: $productId, quantity: $quantity){
+  mutation createCartMutation($productId: ID!, $quantity: Int) {
+    createCartItem(productId: $productId, quantity: $quantity) {
       cartItem {
         quantity
         id
@@ -219,10 +227,9 @@ export const createCartMutation = gql`
 `;
 
 export const updateCartMutation = gql`
-  mutation updateCartMutation ($cartId: ID!, $quantity: Int!){
-    updateCartItem(cartId: $cartId, quantity: $quantity){
+  mutation updateCartMutation($cartId: ID!, $quantity: Int!) {
+    updateCartItem(cartId: $cartId, quantity: $quantity) {
       cartItem {
-        quantity
         id
         quantity
         product {
@@ -235,13 +242,67 @@ export const updateCartMutation = gql`
 `;
 
 export const deleteCartMutation = gql`
-  mutation deleteCartMutation(
-    $cartId: ID!
-  ) {
-    handleWishList(
-      cartId: $cartId
-      ) {
+  mutation deleteCartMutation($cartId: ID!) {
+    deleteCartItem(cartId: $cartId) {
       status
+    }
+  }
+`;
+
+export const cartQuery = gql`
+  query cartQuery($name: String) {
+    carts(name: $name) {
+      quantity
+      id
+      product {
+        name
+        price
+        totalAvailable
+        productImages {
+          isCover
+          image {
+            image
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const completePaymentMutation = gql`
+  mutation completePaymentMutation {
+    completePayment {
+      status
+    }
+  }
+`;
+
+export const deleteProductMutation = gql`
+  mutation deleteProductMutation($productId: ID!) {
+    deleteProduct(productId: $productId) {
+      status
+    }
+  }
+`;
+
+export const requestCartQuery = gql`
+  query requestCartQuery($name: String) {
+    requestCarts(name: $name) {
+      quantity
+      product {
+        name
+        price
+        productImages {
+          isCover
+          image {
+            image
+          }
+        }
+      }
+      user {
+        firstName
+        lastName
+      }
     }
   }
 `;

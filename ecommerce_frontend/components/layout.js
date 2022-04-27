@@ -34,6 +34,12 @@ export default function Layout({ children, hideFooter }) {
           case "register":
             Router.push("/register");
             break;
+          case "cart":
+            Router.push("/cart");
+            break;
+          case "addProduct":
+            Router.push("/user/add-product");
+            break;
           default:
             Router.push("/login");
       }
@@ -41,14 +47,14 @@ export default function Layout({ children, hideFooter }) {
 
   const dropHandler = (e) => {
     switch(e){
-      case "profile":
-        Router.push("/");
+      case "dashboard":
+        Router.push("/user/dashboard");
         break;
       case "products":
-        Router.push("/register");
+        Router.push("/user/products");
         break;
       case "requests":
-        Router.push("/register");
+        Router.push("/user/requests");
         break;
       case "logout":
         setTimeout(() => logout(dispatch), 500);
@@ -91,12 +97,13 @@ export default function Layout({ children, hideFooter }) {
           {
             userInfo && userInfo.id ? (
               <>
+              {userInfo.userBusiness && <button onClick={() => routeToPage("addProduct")}>Add Product</button>}
               {
                 mounted && (
                   <Dropdown 
                     title={<img src="/user.png" alt="userImage"/>} 
                     options={[
-                      {title:"Profile", value:"profile"},
+                      {title:"Dashboard", value:"dashboard"},
                       {title:"Products", value:"products"},
                       {title:"Requests", value:"requests"},
                       {title:"Logout", value:"logout"}
@@ -107,7 +114,7 @@ export default function Layout({ children, hideFooter }) {
                   />
                 )}
             
-              <div className={styles.cartHolder}>
+              <div className={styles.cartHolder} onClick={() => routeToPage("cart")}>
                 <img src="/cart.png" alt="userCart"/>
                 <div className={styles.cartItem}>
                   {userInfo.userCarts.length}

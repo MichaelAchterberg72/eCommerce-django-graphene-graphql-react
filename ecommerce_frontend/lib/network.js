@@ -13,6 +13,7 @@ import {
   createCartMutation, 
   updateCartMutation,
   deleteCartMutation,
+  productQuery,
 } from './graphQueries.js';
 import { customNotifier } from '../components/customNotifier.js';
 
@@ -46,7 +47,7 @@ export const getClientHeaders = (access) => {
         headers: {
           AUTHORIZATION: `JWT ${access}`
         }, 
-      };
+    };
 };
 
 export const getActiveToken = () => {
@@ -58,12 +59,12 @@ export const getNewToken = async (e, refresh) => {
     if(errorContent === expiredToken) {
         const newAccess = await client.mutate({
             mutation: getAccessMutation,
-            variables: {refresh }
+            variables: { refresh }
           }).catch(e => removeCookie(token));
     
           if(newAccess){
             const accessToken = newAccess.data.getAccess.access;
-            setAuthCookie({access: accessToken, refresh: refresh});
+            setAuthCookie({ access: accessToken, refresh: refresh });
             return accessToken
           }
           return null;
@@ -100,15 +101,13 @@ export const getCategories = async () => {
 export const getProducts = async (variables) => {
   const res = await client
     .query({
-        query: productsQuery,
-        variables,
-    }).catch(e => customNotifier({
-        type: "error",
-        content: errorHandler(e)
-    }));
+      query: productQuery,
+      variables,
+    })
+    .catch((e) => customNotifier({ type: "error", content: errorHandler(e) }));
 
   if (res) {
-    const { results, total, size, current, hasNext, hasPrev } = res.data.products.results;
+    const { results, total, size, current, hasNext, hasPrev } = res.data.products;
     const pageInfo = { total, size, current, hasNext, hasPrev };
     return { results, pageInfo };
   }
@@ -146,7 +145,7 @@ const handleAddToWish = async (productId, dispatch, access, refresh) => {
   }
 };
 
-export const async addToCart = (mainId, dispatch, userInfo, quantity=1) => {
+export const addToCart = async (mainId, dispatch, userInfo, quantity = 1) => {
   const activeToken = getActiveToken();
 
   const product = userInfo.userCarts.filter((item) => item.id === mainId);
@@ -156,48 +155,69 @@ export const async addToCart = (mainId, dispatch, userInfo, quantity=1) => {
       quantity,
     };
     const res = await handleCartRequest(
-      mainId, 
-      quantity, 
-      activeToken.access, 
-      activeToken.refresh, 
-      updateCartMutation, 
-      variables,
-      );
-      if (res) {
-        customNotifier({
-          type: "success",
-          content: "Cart updated successfully"
-        });
-        const data = res.updateCartItem.cartItem;
-        const newUserCart = userInfo.userCarts.map(
-          (item) => {
-            if (item.id === mainId) {
-              return data;
-            }
-            return item;
-          }
-        );
-        dispatch({type:setUser, payload:{ ...userInfo, userCarts: newUserCart }});
-      }
+      mainId,
+      quantity,
+      activeToken.access,
+      activeToken.refresh,
+      updateCartMutation,
+      variables
+    );
+    if (res) {
+      customNotifier({ type: "success", content: "Cart updated successfully" });
+      const data = res.updateCartItem.cartItem;
+      const newUserCart = userInfo.userCarts.map((item) => {
+        if (item.id === mainId) {
+          return data;
+        }
+        return item;
+      });
+      dispatch({
+        type: setUser,
+        payload: { ...userInfo, userCarts: newUserCart },
+      });
+    }
   } else {
     const variables = {
       productId: mainId,
-      quantity
+      quantity,
     };
     const res = await handleCartRequest(
-      mainId, 
-      quantity, 
-      activeToken.access, 
-      activeToken.refresh, 
-      createCartMutation, 
+      mainId,
+      quantity,
+      activeToken.access,
+      activeToken.refresh,
+      createCartMutation,
       variables
     );
     if (res) {
       const data = res.createCartItem.cartItem;
-      const newUserInfo = {...userInfo, userCarts:[...userInfo.userCarts, data]};
-      dispatch({type:setUser, payload:newUserInfo});
+      const newUserInfo = {
+        ...userInfo,
+        userCarts: [...userInfo.userCarts, data],
+      };
+      dispatch({ type: setUser, payload: newUserInfo });
     }
   }
+};
+
+export const updateCart = async (cartId, quantity) => {
+  const activeToken = getActiveToken();
+  const variable = {
+    cartId,
+    quantity
+  }
+  const res = await handleCartRequest(
+    cartId, 
+    quantity, 
+    activeToken.access, 
+    activeToken.refresh, 
+    updateCartMutation, 
+    variables
+  );
+  if (res) {
+    return true;
+  }
+  return false;
 };
 
 const handleCartRequest = async (
@@ -234,6 +254,11 @@ const handleCartRequest = async (
               variables
             );
           }
+      } else {
+        customNotifier({
+          type: "error",
+          content: errorInfo
+        });
       }
   }
 };
