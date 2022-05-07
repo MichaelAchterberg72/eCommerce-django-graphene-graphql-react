@@ -4,7 +4,15 @@ from datetime import datetime
 from graphene_file_upload.scalars import Upload
 
 from .models import ImageUpload, User, UserProfile, UserAddress
-from .types import UserAddressType, UserOutput, ImageUploadType, UserProfileInput, UserProfileType, AddressInput
+from .types import (
+    UserAddressType, 
+    UserOutput, 
+    ImageUploadType, 
+    UserProfileInput, 
+    UserProfileType, 
+    AddressInput,
+)
+from .utils import create_user_address, update_user_address
 
 from api.authentication import TokenManager
 from api.permissions import is_authenticated
@@ -139,24 +147,9 @@ class CreateUserAddress(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, address_data, is_default):
-        try:
-            user_profile_id = info.context.user.user_profile.id
-        except Exception:
-            raise Exception("You meed a profile to create an address")
-        
-        existing_address = UserAddress.objects.filter(user_profile=user_profile_id)
-        
-        if is_default:
-            existing_address.update(is_default=False)
-            
-        address = UserAddress.objects.create(
-            user_profile_id=user_profile_id,
-            is_default=is_default,
-            **address_data
-        )
-        
+        user_address = create_user_address(info, address_data, is_default)
         return CreateUserAddress(
-            address=address
+            address=user_address
         )
     
     
@@ -170,19 +163,7 @@ class UpdateUserAddress(graphene.Mutation):
     
     @is_authenticated
     def mutate(self, info, address_data, address_id, is_default=False):
-        profile_id = info.context.user.user_profile.id
-        address = UserAddress.objects.filter(
-            user_profile_id = profile_id,
-            id = address_id
-        ).update(is_default=is_default, **address_data)
-        
-        if is_default:
-            address.objects.filter(
-                uer_profile_id = profile_id
-            ).exclude(
-                id=address_id
-            ).update(is_default=False)
-            
+        user_address = update_user_address(info, address_data, address_id, is_default=False)
         return UpdateUserAddress(
             address = UserAddress.objects.get(id=address_id)
         )
@@ -192,10 +173,11 @@ class DeleteUserAddress(graphene.Mutation):
     status = graphene.Boolean()
     
     class Arguments:
-        profile_id = graphene.ID(required=True)
+        address_id = graphene.ID(required=True)
     
     @is_authenticated
     def mutate(self, info, address_id):
+        profile_id = info.context.user.user_profile.id
         address = UserAddress.objects.filter(
             user_profile_id = profile_id,
             id = address_id
