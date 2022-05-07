@@ -15,8 +15,13 @@ from . models import (
 
 
 class CategoryType(DjangoObjectType):
+    count = graphene.Int()
+    
     class Meta:
         model = Category
+        
+    def resolve_count(self, info):
+        return self.product_categories.name.count()
 
 
 class BusinessType(DjangoObjectType):

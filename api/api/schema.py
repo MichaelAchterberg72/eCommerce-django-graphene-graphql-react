@@ -53,14 +53,12 @@ class Query(graphene.ObjectType):
     request_carts = graphene.List(RequestsCartType, search_filter=graphene.String())
     
     
-    # @is_authenticated
     def resolve_users(self, info, **kwargs):
         return User.objects.filter(**kwargs)
     
     def resolve_user_list(self, info, **kwargs):
         return User.objects.filter(**kwargs)
     
-    @is_authenticated
     def resolve_images_uploads(self, info, **kwargs):
         return ImageUpload.objects.filter(**kwargs)
 
@@ -68,7 +66,7 @@ class Query(graphene.ObjectType):
     def resolve_me(self, info):
         return info.context.user
     
-    def resolve_categories(self, info, name):
+    def resolve_categories(self, info, name=False):
         query = Category.objects.prefetch_related("product_categories")
         
         if name:
@@ -82,7 +80,7 @@ class Query(graphene.ObjectType):
         if mine and not info.context.user:
             raise Exception("User auth required")
         
-        query = Product.objects.select_related("category", "business").prefrtch_related(
+        query = Product.objects.select_related("category", "business").prefetch_related(
             "product_images", "product_comments", "products_wished", "product_carts", "product_requests"
         )
         
@@ -124,7 +122,7 @@ class Query(graphene.ObjectType):
         return query
     
     def resolve_product(self, info, id):
-        query = Product.objects.select_related("category", "business").prefrtch_related(
+        query = Product.objects.select_related("category", "business").prefetch_related(
             "product_images", "product_comments", "products_wished", "product_carts", "product_requests"
         ).get(id=id)
         

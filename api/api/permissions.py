@@ -34,7 +34,12 @@ def resolve_paginated(query_data, info, page_info):
     def  get_paginated_data(qs, paginated_type, page):
         page_size = settings.GRAPHENE.get("PAGE_SIZE", 10)
         
-        p = Paginator(qs.order_by("id"), page_size)
+        try:
+            qs.count()
+        except:
+            raise Exception(qs)
+
+        p = Paginator(qs, page_size)
         
         try:
             page_obj = p.page(page)
@@ -47,7 +52,8 @@ def resolve_paginated(query_data, info, page_info):
             total = p.num_pages,
             size = qs.count(),
             current = page_obj.number,
-            has_next = page_obj.has_previous(),
+            has_next = page_obj.has_next(),
+            has_prev = page_obj.has_previous(),
             results = page_obj.object_list
         )
         
@@ -56,7 +62,7 @@ def resolve_paginated(query_data, info, page_info):
     return get_paginated_data(query_data, info.return_type, page_info)
     
 
-def normalize_query(query_string, findterms=re.compile(r'"([^"]+)"|(\$+)').findall, normspace=re.compile(r'\s{2,').sub):
+def normalize_query(query_string, findterms=re.compile(r'"([^"]+)"|(\S+)').findall, normspace=re.compile(r'\s{2,}').sub):
     return [normspace(' ', (t[0] or t[1]).strip()) for t in findterms(query_string)]
 
 
@@ -70,5 +76,9 @@ def get_query(query_string, search_fields):
             if or_query is None:
                 or_query = q
             else:
-                query = query & or_query
-        return query
+                or_query = or_query | q
+        if query is None:
+            query = or_query
+        else:
+            query = query & or_query
+    return query

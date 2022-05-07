@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from datetime import datetime
 from graphene_file_upload.scalars import Upload
 
-from . models import (
+from .models import (
     Category,
     Business,
     Product,
@@ -13,7 +13,24 @@ from . models import (
     Cart,
     RequestCart,
 )
-from .types import *
+from .types import (
+    BusinessType,
+    ProductType,
+    ProductInput,
+    ProductImageInput,
+    ProductImageType,
+    ProductCommentType,
+    CartType,
+)
+from .utils import (
+    update_business,
+    create_product,
+    update_product,
+    update_product_image,
+    create_product_comment,
+    create_cart_item,
+    complete_payment,
+)
 
 from api.permissions import is_authenticated
 
@@ -26,13 +43,16 @@ class CreateBusiness(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, name):
-        buss = Business.objects.create(name=name, user_id=info.xontext.user.id)
+        buss = Business.objects.create(name=name, user_id=info.context.user.id)
         return CreateBusiness(
             business = buss
         )
 
 
 class UpdateBusiness(graphene.Mutation):
+    """
+    Update the users Business  
+    """
     business = graphene.Field(BusinessType)
     
     class Arguments:
@@ -40,32 +60,46 @@ class UpdateBusiness(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, name):
-        try:
-            instance = info.context.user.user_business
-        except Exception:
-            raise Exception("You do not have a business to update")
-        
-        instance.name = name
-        instance.save()
-        
+        update_buss = update_business(info, name)
         return UpdateBusiness(
-            business = instance
+            business = update_buss
         )
         
         
 class DeleteBusiness(graphene.Mutation):
+    """
+    Delete the users business
+    """
     status = graphene.Boolean()
     
     @is_authenticated
     def mutate(self, info):
         Business.objects.filter(user_id=info.context.user.id).delete()
-        
         return DeleteBusiness(
             status = True
         )
 
 
+class CreateCategory(graphene.Mutation):
+    """
+    Create a category
+    """
+    status = graphene.Boolean()
+    
+    class Arguments:
+        name = graphene.String()
+        
+    def mutate(self, info, name):
+        Category.objects.create(name=name)
+        return CreateCategory(
+            status = True
+        )
+        
+        
 class CreateProduct(graphene.Mutation):
+    """
+    Create a new product
+    """
     product = graphene.Field(ProductType)
     
     class Argumants:
@@ -75,29 +109,16 @@ class CreateProduct(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, product_data, images, **kwargs):
-        try:
-            buss_id = info.context.user.user_business.id
-        except Exception:
-            raise Exception("You do not have a business")
-        
-        have_product = Product.objects.filter(business_id=buss_id, name=product_data["name"])
-        if have_product:
-            raise Exception("You already have a product with this name")
-        
-        product_data["total_available"] = product_data["total_count"]
-        
-        product = Product.objects.create(**product_data, **kwargs)
-        
-        ProductImage.objects.objects.bulk_create([
-            ProductImage(product_id=product.id, **image_data) for image_data in images
-        ])
-        
+        product = create_product(info, product_data, images, **kwargs)
         return CreateProduct(
             product=product
         )
 
 
 class UpdateProduct(graphene.Mutation):
+    """
+    Update a product
+    """
     product = graphene.Field(ProductType)
     
     class Argumants:
@@ -107,24 +128,16 @@ class UpdateProduct(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, product_data, product_id, **kwargs):
-        try:
-            buss_id = info.context.user.user_business.id
-        except Exception:
-            raise Exception("You do not have a business")
-        
-        if product_data.get("name", None):
-            have_product = Product.objects.filter(business_id=buss_id, name=product_data["name"])
-            if have_product:
-                raise Exception("You already have a product with this name")
-            
-        Product.objects.filter(id=product_id, business_id=buss_id).update(**product_data, **kwargs)
-        
+        product = update_product(info, product_data, product_id, **kwargs)
         return UpdateProduct(
-            product=Product.objects.get(id=product_id)
+            product=Product.objects.get(id=product)
         )
         
         
 class DeleteProduct(graphene.Mutation):
+    """
+    Delete a product
+    """
     status = graphene.Boolean()
     
     class Arguments:
@@ -132,13 +145,18 @@ class DeleteProduct(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, product_id):
-        Product.objects.filter(id=product_id, business_id=info.context.user.user_business.id).delete()
+        Product.objects.filter(
+            id=product_id, business_id=info.context.user.user_business.id
+        ).delete()
         return DeleteProduct(
             status=True
         )
 
 
 class UpdateProductImage(graphene.Mutation):
+    """
+    Update a product image
+    """
     image = graphene.Field(ProductImageType)
     
     class Arguments:
@@ -147,24 +165,16 @@ class UpdateProductImage(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, image_data, id):
-        try:
-            buss_id = info.context.user.user_business.id
-        except Exception:
-            raise Exception("You do not have a business, access denied")
-        
-        my_image = ProductImage.objects.filter(product__business_id=buss_id, id=id)
-        if not my_image:
-            raise Exception("You do not own this image")
-        
-        my_image.update(**image_data)
-        if image_data.get("is_cover", False):
-            ProductImage.objects.filter(product__business_id=buss_id, id=id).exclude(id=id).update(is_cover=False)
-            return UpdateProductImage(
-                image=  ProductImage.objects.get(id=id)
-            )
+        product = update_product_image(info, image_data, id)
+        return UpdateProductImage(
+            image = ProductImage.objects.get(id=id)
+        )
         
 
 class CreateProductComment(graphene.Mutation):
+    """
+    Create a product comment
+    """
     product_comment = graphene.Field(ProductCommentType)
     
     class Arguments:
@@ -174,27 +184,16 @@ class CreateProductComment(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, product_id, **kwargs):
-        user_buss_id = None
-        try:
-            user_buss_id = info.context.user.user_business.id
-        except Exception:
-            pass
-        
-        if user_buss_id:
-            own_product = Product.objects.filter(business_id=user_buss_id, id=product_id)
-            if own_product:
-                raise Exception("You cannot comment on your product")
-        
-        ProductComment.objects.filter(user=info.context.user.id, product_id=product_id).delete()
-        
-        pc = ProductComment.objects.create(product_id=product_id, **kwargs)
-        
+        product_comment_item = create_product_comment(info, product_id, **kwargs)
         return CreateProductComment(
-            product_comment=pc
+            product_comment=product_comment_item
         )
 
 
 class HandleWishList(graphene.Mutation):
+    """
+    Add product to wishlist
+    """
     status = graphene.Boolean()
     
     class Arguments:
@@ -230,6 +229,9 @@ class HandleWishList(graphene.Mutation):
         
         
 class CreateCartItem(graphene.Mutation):
+    """`
+    Create cart item
+    """
     cart_item = graphene.Field(CartType)
     
     class Argument:
@@ -238,16 +240,16 @@ class CreateCartItem(graphene.Mutation):
         
     @is_authenticated
     def mutate(self, info, product_id, **kwargs):
-        Cart.objects.filter(product_id=product_id, user_id=info.context.user.id).delete()
-        
-        cart_item = Cart.objects.create(product_id=product_id, user_id=info.context.user.id, **kwargs)
-        
+        cart_item = create_cart_item(self, info, product_id, **kwargs)
         return CreateCartItem(
             cart_item=cart_item
         )
         
         
 class UpdateCartItem(graphene.Mutation):
+    """`
+    Update cart item
+    """
     cart_item = graphene.Field(CartType)
     
     class Argument:
@@ -257,13 +259,15 @@ class UpdateCartItem(graphene.Mutation):
     @is_authenticated
     def mutate(self, info, cart_id, **kwargs):
         Cart.objects.filter(id=cart_id, user_id=info.context.user.id).update(**kwargs)
-        
         return UpdateCartItem(
             cart_item = Cart.objects.get(id=cart_id)
         )
 
 
 class DeleteCartItem(graphene.Mutation):
+    """`
+    Delete cart item
+    """
     status = graphene.Boolean()
     
     class Argument:
@@ -272,31 +276,20 @@ class DeleteCartItem(graphene.Mutation):
     @is_authenticated
     def mutate(self, info, cart_id):
         Cart.objects.filter(id=cart_id, user_id=info.context.user.id).delete()
-        
         return DeleteCartItem(
             status=True
         )
         
         
 class CompletePayment(graphene.Mutation):
+    """`
+    Complete the payment process to add cart items to payment
+    """
     status = graphene.Boolean()
     
     @is_authenticated
     def mutate(self, info):
-        user_carts = Cart.objects.filter(user_id=info.context.user.id)
-        
-        RequestCart.objects.bulk_create({
-            RequestCart(
-                user_id = info.context.user.id,
-                business_id = cart_item.product.business.id,
-                product_id = cart_item.product.id,
-                quantity = cart_item.quantity,
-                price = cart_item.quantity * cart_item.product.price
-            ) for cart_item in user_carts
-        })
-        
-        user_carts.delete()
-        
+        payment_item = complete_payment(info)
         return CompletePayment(
             status = True
         )
@@ -306,9 +299,10 @@ class Mutation(graphene.ObjectType):
     create_business = CreateBusiness.Field()
     update_business = UpdateBusiness.Field()
     delete_business = DeleteBusiness.Field()
+    create_category = CreateCategory.Field()
     create_product = CreateProduct.Field()
     update_product = UpdateProduct.Field()
-    updae_product_image = UpdateProductImage.Field()
+    update_product_image = UpdateProductImage.Field()
     delete_product = DeleteProduct.Field()
     create_product_comment = CreateProductComment.Field()
     handle_wish_list = HandleWishList.Field()
