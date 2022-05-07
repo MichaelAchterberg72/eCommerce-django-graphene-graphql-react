@@ -19,6 +19,9 @@ from api.permissions import is_authenticated
 
 
 class RegisterUser(graphene.Mutation):
+    """
+    Register the user
+    """
     status = graphene.Boolean()
     message = graphene.String()
     
@@ -37,6 +40,9 @@ class RegisterUser(graphene.Mutation):
 
 
 class LoginUser(graphene.Mutation):
+    """
+    Login the user
+    """
     access = graphene.String()
     refresh = graphene.String()
     user = graphene.Field(UserOutput)
@@ -65,6 +71,9 @@ class LoginUser(graphene.Mutation):
     
     
 class GetAccess(graphene.Mutation):
+    """
+    Give the user access token
+    """
     access = graphene.String()
     
     class Arguments:
@@ -84,6 +93,9 @@ class GetAccess(graphene.Mutation):
         
 
 class ImageUploadMain(graphene.Mutation):
+    """
+    Upload the user image
+    """
     image = graphene.Field(ImageUploadType)
     
     class Arguments:
@@ -97,6 +109,9 @@ class ImageUploadMain(graphene.Mutation):
     
     
 class CreateUserProfile(graphene.Mutation):
+    """
+    Create the user profile
+    """
     user_profile = graphene.Field(UserProfileType)
     
     class Arguments:
@@ -116,6 +131,9 @@ class CreateUserProfile(graphene.Mutation):
 
 
 class UpdateUserProfile(graphene.Mutation):
+    """
+    Update the user profile
+    """
     user_profile = graphene.Field(UserProfileType)
     
     class Arguments:
@@ -139,6 +157,9 @@ class UpdateUserProfile(graphene.Mutation):
 
 
 class CreateUserAddress(graphene.Mutation):
+    """
+    Create the user address
+    """
     address = graphene.Field(UserAddressType)
     
     class Arguments:
@@ -154,6 +175,9 @@ class CreateUserAddress(graphene.Mutation):
     
     
 class UpdateUserAddress(graphene.Mutation):
+    """
+    Update the user address
+    """
     address = graphene.Field(UserAddressType)
 
     class Arguments:
@@ -170,6 +194,9 @@ class UpdateUserAddress(graphene.Mutation):
 
 
 class DeleteUserAddress(graphene.Mutation):
+    """
+    Delete the user address
+    """
     status = graphene.Boolean()
     
     class Arguments:
