@@ -27,10 +27,12 @@ from .utils import (
     create_product,
     update_product,
     update_product_image,
+    bulk_action_products,
     create_product_comment,
     create_cart_item,
     complete_payment,
 )
+from .enums import ActionTypeChoicesEnum
 
 from api.permissions import is_authenticated
 
@@ -187,6 +189,23 @@ class CreateProductComment(graphene.Mutation):
         product_comment_item = create_product_comment(info, product_id, **kwargs)
         return CreateProductComment(
             product_comment=product_comment_item
+        )
+
+
+class BulkActionProduct(graphene.Mutation):
+    meggase = graphene.String()
+    ids = graphene.List(graphene.ID)
+    
+    class Argument:
+        ids = graphene.List(graphene.ID)
+        action_type = ActionTypeChoicesEnum()
+        
+    @is_authenticated
+    def mutate(self, info, **kwargs):
+        action = bulk_action_products(**kwargs)
+        return BulkActionProduct(
+            message = action,
+            ids = kwargs.get("ids")
         )
 
 

@@ -1,9 +1,16 @@
+from product_controller.enums import ActionTypeChoices
 from .models import (
     Product,
+    ProductPrice,
     ProductImage,
     ProductComment,
     Cart,
     RequestCart,
+)
+from .handle import (
+    handle_price,
+    handle_publish,
+    handle_duplicate_product
 )
 
 
@@ -20,6 +27,13 @@ def update_business(info, name):
 
 
 def create_product(info, product_data, images, **kwargs):
+    price = product_data.get("price", None)
+    publish = product_data.get("publish", None)
+    if "price" in product_data.key():
+        del product_data["price"]
+    if "publish" in product_data.key():
+        del product_data["publish"]
+        
     try:
         buss_id = info.context.user.user_business.id
     except Exception:
@@ -31,16 +45,30 @@ def create_product(info, product_data, images, **kwargs):
     
     product_data["total_available"] = product_data["total_count"]
     
-    product = Product.objects.create(**product_data, **kwargs)
+    product_obj = Product.objects.create(**product_data, **kwargs)
+    
+    #Handle price
+    if price is not None:
+        product_obj = handle_price(product_obj, price)
+    #Handle publish
+    if publish is not None:
+        product_obj = handle_publish(product_obj, publish)
     
     ProductImage.objects.objects.bulk_create([
-        ProductImage(product_id=product.id, **image_data) for image_data in images
+        ProductImage(product_id=product_obj.id, **image_data) for image_data in images
     ])
     
-    return product
+    return product_obj
 
 
 def update_product(info, product_data, product_id, **kwargs):
+    price = product_data.get("price", None)
+    publish = product_data.get("publish", None)
+    if "price" in product_data.key():
+        del product_data["price"]
+    if "publish" in product_data.key():
+        del product_data["publish"]
+        
     try:
         buss_id = info.context.user.user_business.id
     except Exception:
@@ -51,7 +79,14 @@ def update_product(info, product_data, product_id, **kwargs):
         if have_product:
             raise Exception("You already have a product with this name")
         
-    Product.objects.filter(id=product_id, business_id=buss_id).update(**product_data, **kwargs)
+    product_obj = Product.objects.filter(id=product_id, business_id=buss_id).update(**product_data, **kwargs)
+    
+    #Handle price
+    if price is not None:
+        product_obj = handle_price(product_obj, price)
+    #Handle publish
+    if publish is not None:
+        product_obj = handle_publish(product_obj, publish)
     
     return product_id
 
@@ -90,6 +125,37 @@ def create_product_comment(info, product_id, **kwargs):
     pc = ProductComment.objects.create(product_id=product_id, **kwargs)
     
     return pc
+
+
+def bulk_action_products(**data):
+    ids = data.get("ids", None)
+    action_type = data.get("action_type", None)
+    
+    if ids is not None:
+        raise Exception (
+            f"Please select the products you want to {action_type.title()}"
+        )
+        
+    for id in ids:
+        product_obj = Product.objects.get(id=id)   
+        if action_type == ActionTypeChoices.DELETE:
+            product_obj.delete()
+        if action_type == ActionTypeChoices.PUBLISH:
+            product_obj.handle_publish(
+                product_obj,
+                product_obj.publish,
+                to_published=True
+            )
+        if action_type == ActionTypeChoices.UNPUBLISH:
+            product_obj.handle_unpublish(
+                product_obj,
+                product_obj.publish,
+                to_published=False
+            )
+        if action_type == ActionTypeChoices.DUPLICATE:
+            product_obj = handle_duplicate_product(product_obj)
+            
+    return "Bulk action successful"
 
 
 def create_cart_item(self, info, product_id, **kwargs):
